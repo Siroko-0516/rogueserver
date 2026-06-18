@@ -42,16 +42,16 @@ func setupDb(tx *sql.Tx) error {
 		       secretId SMALLINT(5) UNSIGNED DEFAULT 0,
 		       discordId VARCHAR(32) UNIQUE DEFAULT NULL,
 		       googleId VARCHAR(32) UNIQUE DEFAULT NULL
-	       )`,
-		`CREATE INDEX accountsByActivity ON accounts (lastActivity)`,
+		       )`,
+		`CREATE INDEX IF NOT EXISTS accountsByActivity ON accounts (lastActivity)`,
 
 		`CREATE TABLE IF NOT EXISTS sessions (
 		       token BINARY(32) NOT NULL PRIMARY KEY,
 		       uuid BINARY(16) NOT NULL,
 		       expire TIMESTAMP DEFAULT NULL,
 		       CONSTRAINT sessions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
-	       )`,
-		`CREATE INDEX sessionsByUuid ON sessions (uuid)`,
+		       )`,
+		`CREATE INDEX IF NOT EXISTS sessionsByUuid ON sessions (uuid)`,
 
 		`CREATE TABLE IF NOT EXISTS accountStats (
 		       uuid BINARY(16) NOT NULL PRIMARY KEY,
@@ -71,13 +71,13 @@ func setupDb(tx *sql.Tx) error {
 		       premiumVouchers INT(11) NOT NULL DEFAULT 0,
 		       goldenVouchers INT(11) NOT NULL DEFAULT 0,
 		       CONSTRAINT accountStats_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
-	       )`,
+		       )`,
 
 		`CREATE TABLE IF NOT EXISTS dailyRuns (
 		       date DATE NOT NULL PRIMARY KEY,
 		       seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL
-	       )`,
-		`CREATE INDEX dailyRunsByDateAndSeed ON dailyRuns (date, seed)`,
+		       )`,
+		`CREATE INDEX IF NOT EXISTS dailyRunsByDateAndSeed ON dailyRuns (date, seed)`,
 
 		`CREATE TABLE IF NOT EXISTS dailyRunCompletions (
 		       uuid BINARY(16) NOT NULL,
@@ -87,8 +87,8 @@ func setupDb(tx *sql.Tx) error {
 		       timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		       PRIMARY KEY (uuid, seed),
 		       CONSTRAINT dailyRunCompletions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
-	       )`,
-		`CREATE INDEX dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions (uuid, seed)`,
+		       )`,
+		`CREATE INDEX IF NOT EXISTS dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions (uuid, seed)`,
 
 		`CREATE TABLE IF NOT EXISTS accountDailyRuns (
 		       uuid BINARY(16) NOT NULL,
@@ -99,8 +99,8 @@ func setupDb(tx *sql.Tx) error {
 		       PRIMARY KEY (uuid, date),
 		       CONSTRAINT accountDailyRuns_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
 		       CONSTRAINT accountDailyRuns_ibfk_2 FOREIGN KEY (date) REFERENCES dailyRuns (date) ON DELETE NO ACTION ON UPDATE NO ACTION
-	       )`,
-		`CREATE INDEX accountDailyRunsByDate ON accountDailyRuns (date)`,
+		       )`,
+		`CREATE INDEX IF NOT EXISTS accountDailyRunsByDate ON accountDailyRuns (date)`,
 
 		`CREATE TABLE IF NOT EXISTS sessionSaveData (
 		       uuid BINARY(16),
@@ -109,13 +109,13 @@ func setupDb(tx *sql.Tx) error {
 		       timestamp TIMESTAMP,
 		       PRIMARY KEY (uuid, slot),
 		       FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
-	       )`,
+		       )`,
 
 		`CREATE TABLE IF NOT EXISTS activeClientSessions (
 		       uuid BINARY(16) NOT NULL PRIMARY KEY,
 		       clientSessionId VARCHAR(32) NOT NULL,
 		       FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
-	       )`,
+		       )`,
 	}
 
 	// Conditionally add systemSaveData table if AWS_ENDPOINT_URL_S3 is not set
@@ -125,7 +125,7 @@ func setupDb(tx *sql.Tx) error {
 		       data LONGBLOB,
 		       timestamp TIMESTAMP,
 		       FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
-	       )`)
+		       )`)
 	}
 
 	for _, q := range queries {
