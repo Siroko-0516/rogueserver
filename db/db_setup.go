@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // MaybeSetupDb is called by db.go and runs setupDb only in devsetup builds.
@@ -27,6 +28,10 @@ func MaybeSetupDb(db *sql.DB) error {
 	return nil
 }
 
+func isDuplicateKeyError(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "Duplicate key name")
+}
+
 func setupDb(tx *sql.Tx) error {
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS accounts (
@@ -43,7 +48,7 @@ func setupDb(tx *sql.Tx) error {
 		       discordId VARCHAR(32) UNIQUE DEFAULT NULL,
 		       googleId VARCHAR(32) UNIQUE DEFAULT NULL
 		       )`,
-		`CREATE INDEX IF NOT EXISTS accountsByActivity ON accounts (lastActivity)`,
+		`CREATE INDEX accountsByActivity ON accounts (lastActivity)`,
 
 		`CREATE TABLE IF NOT EXISTS sessions (
 		       token BINARY(32) NOT NULL PRIMARY KEY,
@@ -51,7 +56,7 @@ func setupDb(tx *sql.Tx) error {
 		       expire TIMESTAMP DEFAULT NULL,
 		       CONSTRAINT sessions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 		       )`,
-		`CREATE INDEX IF NOT EXISTS sessionsByUuid ON sessions (uuid)`,
+		`CREATE INDEX sessionsByUuid ON sessions (uuid)`,
 
 		`CREATE TABLE IF NOT EXISTS accountStats (
 		       uuid BINARY(16) NOT NULL PRIMARY KEY,
@@ -77,7 +82,7 @@ func setupDb(tx *sql.Tx) error {
 		       date DATE NOT NULL PRIMARY KEY,
 		       seed CHAR(24) CHARACTER SET ascii COLLATE ascii_bin NOT NULL
 		       )`,
-		`CREATE INDEX IF NOT EXISTS dailyRunsByDateAndSeed ON dailyRuns (date, seed)`,
+		`CREATE INDEX dailyRunsByDateAndSeed ON dailyRuns (date, seed)`,
 
 		`CREATE TABLE IF NOT EXISTS dailyRunCompletions (
 		       uuid BINARY(16) NOT NULL,
@@ -88,7 +93,7 @@ func setupDb(tx *sql.Tx) error {
 		       PRIMARY KEY (uuid, seed),
 		       CONSTRAINT dailyRunCompletions_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE
 		       )`,
-		`CREATE INDEX IF NOT EXISTS dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions (uuid, seed)`,
+		`CREATE INDEX dailyRunCompletionsByUuidAndSeed ON dailyRunCompletions (uuid, seed)`,
 
 		`CREATE TABLE IF NOT EXISTS accountDailyRuns (
 		       uuid BINARY(16) NOT NULL,
@@ -100,7 +105,7 @@ func setupDb(tx *sql.Tx) error {
 		       CONSTRAINT accountDailyRuns_ibfk_1 FOREIGN KEY (uuid) REFERENCES accounts (uuid) ON DELETE CASCADE ON UPDATE CASCADE,
 		       CONSTRAINT accountDailyRuns_ibfk_2 FOREIGN KEY (date) REFERENCES dailyRuns (date) ON DELETE NO ACTION ON UPDATE NO ACTION
 		       )`,
-		`CREATE INDEX IF NOT EXISTS accountDailyRunsByDate ON accountDailyRuns (date)`,
+		`CREATE INDEX accountDailyRunsByDate ON accountDailyRuns (date)`,
 
 		`CREATE TABLE IF NOT EXISTS sessionSaveData (
 		       uuid BINARY(16),
@@ -130,7 +135,7 @@ func setupDb(tx *sql.Tx) error {
 
 	for _, q := range queries {
 		_, err := tx.Exec(q)
-		if err != nil {
+		if err != nil && !isDuplicateKeyError(err) {
 			return fmt.Errorf("failed to execute query: %w, query: %s", err, q)
 		}
 	}
