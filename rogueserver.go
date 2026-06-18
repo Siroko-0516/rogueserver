@@ -95,7 +95,7 @@ func main() {
 	}
 
 	// start web server
-	handler := prodHandler(mux, gameurl)
+	handler := debugHandler(mux)
 	if debug {
 		handler = debugHandler(mux)
 	}
