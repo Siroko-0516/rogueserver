@@ -67,6 +67,11 @@ func Init(mux *http.ServeMux) error {
 	mux.HandleFunc("/auth/{provider}/callback", handleProviderCallback)
 	mux.HandleFunc("/auth/{provider}/logout", handleProviderLogout)
 
+	// custom admin
+	mux.HandleFunc("POST /admin/givemoney", handleAdminGiveMoney)
+	mux.HandleFunc("POST /admin/unlockalldex", handleAdminUnlockAllDex)
+	mux.HandleFunc("GET /admin/getsave", handleAdminGetSave)
+
 	// admin
 	mux.HandleFunc("POST /admin/account/discordLink", handleAdminDiscordLink)
 	mux.HandleFunc("POST /admin/account/discordUnlink", handleAdminDiscordUnlink)
