@@ -67,10 +67,10 @@ func handleAccountInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var hasAdminRole bool
-	hasAdminRole = (username == "admin")
-	//if discordId != "" {
-	//	hasAdminRole, _ = account.Discord.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
-	//}
+	//hasAdminRole = (username == "admin")
+	if discordId != "" {
+		hasAdminRole, _ = account.Discord.IsUserDiscordAdmin(discordId, account.DiscordGuildID)
+	}
 
 	response, err := account.Info(db.Store, username, discordId, googleId, uuid, hasAdminRole)
 	if err != nil {
